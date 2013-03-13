@@ -20,3 +20,9 @@ group :test do
   gem 'rspec-core'
   gem 'rspec-expectations'
 end
+
+# Use pilfer head until gem is pushed.
+gem 'pilfer', github: 'eric/pilfer'
+
+# pilfer head requires rblineprof head.
+gem 'rblineprof', github: 'tmm1/rblineprof'

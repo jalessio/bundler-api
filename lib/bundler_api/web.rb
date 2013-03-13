@@ -9,9 +9,13 @@ require_relative '../bundler_api/gem_helper'
 require_relative '../bundler_api/update/job'
 require_relative '../bundler_api/update/yank_job'
 
-
 class BundlerApi::Web < Sinatra::Base
   RUBYGEMS_URL = "https://www.rubygems.org"
+
+  set :root, File.join(File.dirname(__FILE__), '..', '..')
+
+  require 'pilfer'
+  use Pilfer::Middleware, settings.root
 
   unless ENV['RACK_ENV'] == 'test'
     use Metriks::Middleware
