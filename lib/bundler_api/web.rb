@@ -18,33 +18,34 @@ class BundlerApi::Web < Sinatra::Base
     use Honeybadger::Rack
   end
 
-  def initialize(conn = nil)
+  def initialize(conn = nil, write_conn = nil)
     @rubygems_token = ENV['RUBYGEMS_TOKEN']
 
-    max_conns = ENV['MAX_THREADS'] || 2
-
     @conn = conn || begin
-      db_url = BundlerApi::DatabaseUrl.url(ENV["FOLLOWER_DATABASE_URL"])
-      Sequel.connect(db_url, :max_connections => max_conns)
+      # db_url = BundlerApi::DatabaseUrl.url(ENV["FOLLOWER_DATABASE_URL"])
+      db_url = BundlerApi::DatabaseUrl.url(ENV["DATABASE_URL"])
+      Sequel.connect(db_url)
     end
 
     write_url = BundlerApi::DatabaseUrl.url(ENV["DATABASE_URL"])
-    @write_conn = Sequel.connect(write_url, :max_connections => max_conns)
+    @write_conn = Sequel.connect(write_url)
 
     super()
   end
 
-  def get_deps
+  def gems
     halt(200) if params[:gems].nil?
+    params[:gems].split(',')
+  end
 
-    gems, deps = nil
-    Metriks.timer('dependencies').time do
-      gems = params[:gems].split(',')
-      deps = BundlerApi::DepCalc.deps_for(@conn, gems)
-    end
+  def get_deps
+    timer = Metriks.timer('dependencies').time
+    deps  = BundlerApi::DepCalc.deps_for(@conn, gems)
     Metriks.histogram('gems.size').update(gems.size)
     Metriks.histogram('dependencies.size').update(deps.size)
     deps
+  ensure
+    timer.stop if timer
   end
 
   def get_payload
@@ -128,5 +129,4 @@ class BundlerApi::Web < Sinatra::Base
   get "/specs.4.8.gz" do
     redirect "#{RUBYGEMS_URL}/specs.4.8.gz"
   end
-
 end

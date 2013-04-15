@@ -1,4 +1,5 @@
 require 'rspec/core'
+require_relative 'support/database'
 require_relative 'support/latch'
 require_relative '../lib/bundler_api/database_url'
 

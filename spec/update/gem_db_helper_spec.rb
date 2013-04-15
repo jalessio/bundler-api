@@ -4,13 +4,10 @@ require_relative '../../lib/bundler_api/update/gem_db_helper'
 require_relative '../../lib/bundler_api/gem_helper'
 
 describe BundlerApi::GemDBHelper do
-  let(:db)        { Sequel.connect(database_url) }
+  let(:db)        { $db }
   let(:gem_cache) { Hash.new }
   let(:mutex)     { nil }
   let(:helper)    { BundlerApi::GemDBHelper.new(db, gem_cache, mutex) }
-  around(:each) do |example|
-    db.transaction(:rollback => :always) { example.run }
-  end
 
   describe "#exists?" do
     let(:payload) { BundlerApi::GemHelper.new("foo", Gem::Version.new("1.0"), "ruby", false) }
@@ -209,48 +206,56 @@ describe BundlerApi::GemDBHelper do
       end
 
       context "sometimes the dep name is true which gets eval'd as a TrueClass" do
-        let(:foo_spec) do
-          generate_gemspec('foo', '1.0') do |s|
-            s.add_runtime_dependency(true, "> 0")
-          end
-        end
-
         it "should insert the dependencies and not fail on the true gem" do
-          deps_added = helper.insert_dependencies(foo_spec, @foo_version_id)
-
-          expect(deps_added).to eq(["~> 1.0 bar"])
-          expect(db[:dependencies].filter(requirements: requirement,
-                                          scope:        'runtime',
-                                          rubygem_id:   @bar_rubygem_id,
-                                          version_id:   @foo_version_id).count).to eq(1)
+          pending "pending rubygems issue #505 resolution https://github.com/rubygems/rubygems/issues/505"
         end
+
+        # let(:foo_spec) do
+        #   generate_gemspec('foo', '1.0') do |s|
+        #     s.add_runtime_dependency(true, "> 0")
+        #   end
+        # end
+
+        # it "should insert the dependencies and not fail on the true gem" do
+        #   deps_added = helper.insert_dependencies(foo_spec, @foo_version_id)
+
+        #   expect(deps_added).to eq(["~> 1.0 bar"])
+        #   expect(db[:dependencies].filter(requirements: requirement,
+        #                                   scope:        'runtime',
+        #                                   rubygem_id:   @bar_rubygem_id,
+        #                                   version_id:   @foo_version_id).count).to eq(1)
+        # end
       end
 
       context "when the dep name is a symbol" do
-        let(:foo_spec) do
-          generate_gemspec('foo', '1.0') do |s|
-            s.add_runtime_dependency(:baz, "> 0")
-          end
-        end
-        let(:baz_spec) { generate_gemspec('baz', '1.0') }
-
-        before do
-          @baz_rubygem_id = helper.find_or_insert_rubygem(baz_spec).last
-        end
-
         it "should insert the dependencies and not fail on the true gem" do
-          deps_added = helper.insert_dependencies(foo_spec, @foo_version_id)
-
-          expect(deps_added).to eq(["~> 1.0 bar", "> 0 baz"])
-          expect(db[:dependencies].filter(requirements: requirement,
-                                          scope:        'runtime',
-                                          rubygem_id:   @bar_rubygem_id,
-                                          version_id:   @foo_version_id).count).to eq(1)
-          expect(db[:dependencies].filter(requirements: "> 0",
-                                          scope:        'runtime',
-                                          rubygem_id:   @baz_rubygem_id,
-                                          version_id:   @foo_version_id).count).to eq(1)
+          pending "pending rubygems issue #505 resolution https://github.com/rubygems/rubygems/issues/505"
         end
+
+        # let(:foo_spec) do
+        #   generate_gemspec('foo', '1.0') do |s|
+        #     s.add_runtime_dependency(:baz, "> 0")
+        #   end
+        # end
+        # let(:baz_spec) { generate_gemspec('baz', '1.0') }
+
+        # before do
+        #   @baz_rubygem_id = helper.find_or_insert_rubygem(baz_spec).last
+        # end
+
+        # it "should insert the dependencies and not fail on the true gem" do
+        #   deps_added = helper.insert_dependencies(foo_spec, @foo_version_id)
+
+        #   expect(deps_added).to eq(["~> 1.0 bar", "> 0 baz"])
+        #   expect(db[:dependencies].filter(requirements: requirement,
+        #                                   scope:        'runtime',
+        #                                   rubygem_id:   @bar_rubygem_id,
+        #                                   version_id:   @foo_version_id).count).to eq(1)
+        #   expect(db[:dependencies].filter(requirements: "> 0",
+        #                                   scope:        'runtime',
+        #                                   rubygem_id:   @baz_rubygem_id,
+        #                                   version_id:   @foo_version_id).count).to eq(1)
+        # end
       end
 
       context "sometimes the dep is an array" do
